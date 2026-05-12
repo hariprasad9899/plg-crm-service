@@ -1,4 +1,4 @@
-from app.core.exceptions.response import success_response
+from app.core.response import success_response
 
 
 class AuthService:

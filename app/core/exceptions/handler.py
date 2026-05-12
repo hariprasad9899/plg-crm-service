@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from sqlalchemy.exc import IntegrityError
 from app.core.exceptions.base import AppException
-from app.core.exceptions.response import error_response
+from app.core.response import error_response
 import logging
 
 logger = logging.getLogger(__name__)
