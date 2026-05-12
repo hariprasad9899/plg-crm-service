@@ -25,3 +25,7 @@ EMAIL_ALREADY_EXISTS = ErrorDefinition(
     message="Email already exists",
     status_code=409,
 )
+
+GENERIC_EXCEPTION = ErrorDefinition(
+    code="SOMETHING_WENT_WRONG", message="Something went wrong", status_code=500
+)

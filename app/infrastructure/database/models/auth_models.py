@@ -65,6 +65,7 @@ class Tenant(Base):
         SqlEnum(TenantTypeEnum, name="tenant_type_enum"),
         nullable=False,
         default=TenantTypeEnum.PERSONAL,
+        values_callable=lambda obj: [e.value for e in obj],
     )
     claimed_domain: Mapped[str | None] = mapped_column(String(255))
     is_domain_verified: Mapped[bool] = mapped_column(
@@ -74,6 +75,7 @@ class Tenant(Base):
         SqlEnum(SubscriptionPlanEnum, name="subscription_plan_enum"),
         nullable=False,
         default=SubscriptionPlanEnum.FREE,
+        values_callable=lambda obj: [e.value for e in obj],
     )
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     settings: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
@@ -170,7 +172,11 @@ class AuthIdentity(Base):
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
     provider: Mapped[AuthProviderEnum] = mapped_column(
-        SqlEnum(AuthProviderEnum, name="auth_provider_enum"),
+        SqlEnum(
+            AuthProviderEnum,
+            name="auth_provider_enum",
+            values_callable=lambda obj: [e.value for e in obj],
+        ),
         nullable=False,
     )
     provider_user_id: Mapped[str | None] = mapped_column(Text)
@@ -250,6 +256,7 @@ class TenantMembership(Base):
         SqlEnum(MembershipRoleEnum, name="membership_role_enum"),
         nullable=False,
         default=MembershipRoleEnum.MEMBER,
+        values_callable=lambda obj: [e.value for e in obj],
     )
     is_default: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     joined_at: Mapped[DateTime] = mapped_column(
