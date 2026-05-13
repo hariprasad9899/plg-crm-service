@@ -10,6 +10,7 @@ from app.core.exceptions.handler import (
     integrity_exception_handler,
     generic_exeption_handler,
 )
+import app.infrastructure.database.models
 
 app = FastAPI(title="auth-service")
 

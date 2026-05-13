@@ -1,4 +1,4 @@
-from app.core.exceptions.catalog import ErrorDefinition
+from app.core.exceptions.error_catalog import ErrorDefinition
 
 
 class AppException(Exception):

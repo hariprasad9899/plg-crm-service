@@ -12,13 +12,10 @@ from sqlalchemy import (
     text,
 )
 from sqlalchemy.dialects.postgresql import UUID, JSONB, INET
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 import uuid
-
-
-class Base(DeclarativeBase):
-    pass
+from app.infrastructure.database.base import Base
 
 
 class TenantTypeEnum(str, Enum):
@@ -117,7 +114,7 @@ class User(Base):
         UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
     )
     full_name: Mapped[str | None] = mapped_column(String(255))
-    primary_email: Mapped[str] = mapped_column(String(320), nullable=False)
+    primary_email: Mapped[str] = mapped_column(String(320), nullable=False, unique=True)
     avatar_url: Mapped[str | None] = mapped_column(Text)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     is_email_verified: Mapped[bool] = mapped_column(
@@ -186,6 +183,11 @@ class AuthIdentity(Base):
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
     user = relationship("User", back_populates="auth_identities")
+    otps = relationship(
+        "AuthOTP",
+        back_populates="auth_identity",
+        cascade="all, delete-orphan",
+    )
     __table_args__ = (
         CheckConstraint(
             """

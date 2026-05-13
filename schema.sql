@@ -63,7 +63,8 @@ CREATE TABLE users (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     deleted_at TIMESTAMPTZ
 );
-
+ALTER TABLE users
+ADD CONSTRAINT uq_users_primary_email UNIQUE(primary_email);
 CREATE UNIQUE INDEX idx_user_email ON users(LOWER(primary_email));
 
 CREATE TABLE auth_identities (
@@ -137,3 +138,22 @@ CREATE TABLE sessions (
 CREATE INDEX idx_sessions_user ON sessions(user_id);
 CREATE INDEX idx_sessions_tenant ON sessions(tenant_id);
 CREATE INDEX idx_sessions_revoked ON sessions(revoked_at);
+
+CREATE TYPE otp_purpose_enum AS ENUM (
+    'email_verification',
+    'password_reset',
+    'login'
+);
+
+CREATE TABLE auth_otps (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    auth_identity_id UUID NOT NULL
+        REFERENCES auth_identities(id)
+        ON DELETE CASCADE,
+    otp_hash TEXT NOT NULL,
+    purpose otp_purpose_enum NOT NULL,
+    expires_at TIMESTAMPTZ NOT NULL,
+    consumed_at TIMESTAMPTZ,
+    attempt_count INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
