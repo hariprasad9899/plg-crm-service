@@ -22,5 +22,15 @@ class ResendOtpResponse(BaseModel):
 
 
 class ResendOtp(BaseModel):
-    auth_identity_id: str
+    auth_id: str
     purpose: OTPPurposeEnum
+
+
+class VerifyOtpResponse(BaseModel):
+    message: str
+
+
+class VerifyOtp(BaseModel):
+    auth_id: str
+    purpose: OTPPurposeEnum
+    otp: int

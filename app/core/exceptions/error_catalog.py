@@ -58,3 +58,7 @@ OTP_RESEND_LIMIT_EXCEEDED = ErrorDefinition(
     message="OTP Resend limit exceeded. Please try again later.",
     status_code=429,
 )
+
+USER_NOT_FOUND = ErrorDefinition(
+    code="USER_NOT_FOUND", message="User not found.", status_code=404
+)

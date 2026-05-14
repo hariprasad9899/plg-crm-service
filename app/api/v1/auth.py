@@ -4,6 +4,8 @@ from app.schemas.v1.auth_schemas import (
     SignupUserResponse,
     ResendOtpResponse,
     ResendOtp,
+    VerifyOtpResponse,
+    VerifyOtp,
 )
 from app.domain.services.auth_service import AuthService
 from app.dependencies.auth_dependenies import get_auth_service
@@ -32,7 +34,19 @@ def resend_otp(
     service: AuthService = Depends(get_auth_service),
 ):
     return service.send_otp(
-        auth_identity_id=data.auth_identity_id,
+        auth_identity_id=data.auth_id,
         purpose=data.purpose,
         background_tasks=background_tasks,
+    )
+
+
+@router.post("/verify-otp", response_model=ResendOtpResponse)
+def verify_otp(
+    data: VerifyOtp,
+    service: AuthService = Depends(get_auth_service),
+):
+    return service.verify_otp(
+        auth_identity_id=data.auth_id,
+        purpose=data.purpose,
+        otp=data.otp,
     )

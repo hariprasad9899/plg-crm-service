@@ -52,3 +52,7 @@ class AuthRepo:
             .first()
         )
         return auth_user
+
+    def get_user_by_user_id(self, user_id: str):
+        user = self.db.query(User).filter(User.id == user_id).first()
+        return user
