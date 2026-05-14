@@ -8,7 +8,7 @@ from app.infrastructure.database.models.auth_models import (
 )
 
 
-class AuthRepo(AuthPort):
+class AuthRepo:
     def __init__(self, db: Session):
         self.db = db
 
@@ -44,3 +44,11 @@ class AuthRepo(AuthPort):
         self.db.add(auth_identity)
         self.db.flush()
         return auth_identity
+
+    def get_user_by_auth_id(self, auth_identity_id: str):
+        auth_user = (
+            self.db.query(AuthIdentity)
+            .filter(AuthIdentity.id == auth_identity_id)
+            .first()
+        )
+        return auth_user

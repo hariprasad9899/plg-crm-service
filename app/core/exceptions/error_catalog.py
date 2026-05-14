@@ -52,3 +52,9 @@ OTP_REQUEST_TOO_FREQUENT = ErrorDefinition(
     message="OTP requests are too frequent. Please try again later.",
     status_code=429,
 )
+
+OTP_RESEND_LIMIT_EXCEEDED = ErrorDefinition(
+    code="OTP_RESEND_LIMIT_EXCEEDED",
+    message="OTP Resend limit exceeded. Please try again later.",
+    status_code=429,
+)

@@ -65,3 +65,19 @@ class OtpRepo:
             .order_by(AuthOTP.created_at.desc())
             .first()
         )
+
+    def count_recent_otps(
+        self,
+        auth_identity_id: str,
+        purpose: OTPPurposeEnum,
+        minutes: int = 5,
+    ):
+        return (
+            self.db.query(AuthOTP)
+            .filter(
+                AuthOTP.auth_identity_id == auth_identity_id,
+                AuthOTP.purpose == purpose.value,
+                AuthOTP.created_at >= datetime.now(UTC) - timedelta(minutes=minutes),
+            )
+            .count()
+        )

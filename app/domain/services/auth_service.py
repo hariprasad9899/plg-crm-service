@@ -6,9 +6,10 @@ from app.core.security.security import hash_value
 from app.domain.services.otp_service import OtpService
 from app.infrastructure.integrations.email.ses_email_service import SeSEmailService
 from app.infrastructure.database.models.otp_models import OTPPurposeEnum
+from app.domain.ports.auth_ports import AuthPort
 
 
-class AuthService:
+class AuthService(AuthPort):
     def __init__(
         self,
         auth_repo: AuthRepo,
@@ -50,7 +51,8 @@ class AuthService:
             self.auth_repo.db.refresh(user)
 
             otp_data = self.otp_service.create_otp(
-                auth_identity.id, OTPPurposeEnum.EMAIL_VERIFICATION
+                auth_identity_id=auth_identity.id,
+                purpose=OTPPurposeEnum.EMAIL_VERIFICATION,
             )
             background_tasks.add_task(
                 self.email_service.send_otp_verification_mail,
@@ -59,6 +61,7 @@ class AuthService:
             )
             res_data = {
                 "id": str(user.id),
+                "auth_id": str(auth_identity.id),
                 "name": user.full_name,
                 "email": user.primary_email,
                 "status": user.status,
@@ -67,4 +70,29 @@ class AuthService:
             return success_response(data=res_data)
         except Exception:
             self.auth_repo.db.rollback()
+            raise
+
+    def send_otp(
+        self, auth_identity_id: str, purpose: OTPPurposeEnum, background_tasks
+    ):
+        try:
+            auth_user = self.auth_repo.get_user_by_auth_id(
+                auth_identity_id=auth_identity_id
+            )
+            auth_user_email = auth_user.provider_email
+            otp_data = self.otp_service.resend_otp(
+                auth_identity_id=auth_identity_id,
+                purpose=OTPPurposeEnum.EMAIL_VERIFICATION,
+            )
+            background_tasks.add_task(
+                self.email_service.send_otp_verification_mail,
+                to_email=auth_user_email,
+                otp=otp_data["otp"],
+            )
+            res_data = {
+                "message": "OTP resent successfully",
+                "expires_at": otp_data["expires_at"].isoformat(),
+            }
+            return success_response(res_data)
+        except Exception:
             raise

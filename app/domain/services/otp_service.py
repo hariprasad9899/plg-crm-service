@@ -10,6 +10,7 @@ from app.core.exceptions.error_catalog import (
     OTP_INVALID,
     OTP_MAX_ATTEMPTS_EXCEEDED,
     OTP_REQUEST_TOO_FREQUENT,
+    OTP_RESEND_LIMIT_EXCEEDED,
 )
 
 
@@ -75,4 +76,10 @@ class OtpService(OptPort):
             raise
 
     def resend_otp(self, auth_identity_id: str, purpose: OTPPurposeEnum):
+        otp_count = self.repo.count_recent_otps(
+            auth_identity_id=auth_identity_id,
+            purpose=purpose,
+        )
+        if otp_count >= 4:
+            raise AppException(OTP_RESEND_LIMIT_EXCEEDED)
         return self.create_otp(auth_identity_id=auth_identity_id, purpose=purpose)
