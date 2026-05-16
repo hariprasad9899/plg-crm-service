@@ -12,6 +12,9 @@ from app.domain.services.auth_service import AuthService
 from app.dependencies.auth_dependenies import get_auth_service
 from app.core.response import success_response
 from app.core.config import Settings
+from app.core.middlewares.auth_middleware import authenticate_and_authorize
+from app.core.exceptions.handler import AppException
+from app.core.exceptions.error_catalog import USER_NOT_FOUND
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -93,3 +96,14 @@ def signin_user(
     ]
 
     return success_response(user_data, cookies=cookies)
+
+
+@router.get("/me", response_model=SignInUserResponse)
+def me(
+    payload: dict = Depends(authenticate_and_authorize),
+    service: AuthService = Depends(get_auth_service),
+):
+    user_id = payload["user_id"]
+    if not user_id:
+        raise AppException(USER_NOT_FOUND)
+    return service.get_user(user_id=user_id)

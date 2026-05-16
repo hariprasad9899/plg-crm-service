@@ -37,9 +37,16 @@ class SignInUserResponse(BaseModel):
     auth_id: str
     name: str
     email: EmailStr
-    is_email_verified: str
+    is_email_verified: bool
 
 
 class SignInUser(BaseModel):
     email: str
     password: str
+
+
+class UserResonse(BaseModel):
+    id: str
+    name: str
+    email: EmailStr
+    is_email_verfied: bool

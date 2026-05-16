@@ -186,3 +186,18 @@ class AuthService(AuthPort):
         except Exception:
             self.auth_repo.db.rollback()
             raise
+
+    def get_user(self, user_id: str):
+        user = self.auth_repo.get_user_by_user_id(user_id=user_id)
+        try:
+            if not user:
+                raise AppException(USER_NOT_FOUND)
+            res_data = {
+                "id": str(user.id),
+                "name": user.full_name,
+                "email": user.primary_email,
+                "is_email_verified": user.is_email_verified,
+            }
+            return success_response(res_data)
+        except Exception:
+            raise
