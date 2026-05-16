@@ -24,6 +24,12 @@ USER_NOT_FOUND = ErrorDefinition(
     status_code=404,
 )
 
+NOT_FOUND = ErrorDefinition(
+    code="NOT_FOUND",
+    message="Resource not found",
+    status_code=404,
+)
+
 EMAIL_ALREADY_EXISTS = ErrorDefinition(
     code="EMAIL_ALREADY_EXISTS",
     message="Email already exists",

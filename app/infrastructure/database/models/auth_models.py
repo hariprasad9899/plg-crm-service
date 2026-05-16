@@ -59,20 +59,26 @@ class Tenant(Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     slug: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
     tenant_type: Mapped[TenantTypeEnum] = mapped_column(
-        SqlEnum(TenantTypeEnum, name="tenant_type_enum"),
+        SqlEnum(
+            TenantTypeEnum,
+            name="tenant_type_enum",
+            values_callable=lambda obj: [e.value for e in obj],
+        ),
         nullable=False,
         default=TenantTypeEnum.PERSONAL,
-        values_callable=lambda obj: [e.value for e in obj],
     )
     claimed_domain: Mapped[str | None] = mapped_column(String(255))
     is_domain_verified: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False
     )
     subscription_plan: Mapped[SubscriptionPlanEnum] = mapped_column(
-        SqlEnum(SubscriptionPlanEnum, name="subscription_plan_enum"),
-        nullable=False,
-        default=SubscriptionPlanEnum.FREE,
+    SqlEnum(
+        SubscriptionPlanEnum,
+        name="subscription_plan_enum",
         values_callable=lambda obj: [e.value for e in obj],
+    ),
+    nullable=False,
+    default=SubscriptionPlanEnum.FREE,
     )
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     settings: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
@@ -255,10 +261,13 @@ class TenantMembership(Base):
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
     role: Mapped[MembershipRoleEnum] = mapped_column(
-        SqlEnum(MembershipRoleEnum, name="membership_role_enum"),
+        SqlEnum(
+            MembershipRoleEnum,
+            name="membership_role_enum",
+            values_callable=lambda obj: [e.value for e in obj],
+        ),
         nullable=False,
         default=MembershipRoleEnum.MEMBER,
-        values_callable=lambda obj: [e.value for e in obj],
     )
     is_default: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     joined_at: Mapped[DateTime] = mapped_column(
