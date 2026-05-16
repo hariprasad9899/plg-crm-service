@@ -90,3 +90,11 @@ class AuthRepo:
     def get_session_by_id(self, session_id: str):
         session = self.db.query(Session).filter(Session.id == session_id).first()
         return session
+
+    def get_session_by_refresh_token_hash(self, refresh_token_hash: str):
+        session = (
+            self.db.query(Session)
+            .filter(Session.refresh_token_hash == refresh_token_hash)
+            .first()
+        )
+        return session

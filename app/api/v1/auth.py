@@ -14,7 +14,7 @@ from app.core.response import success_response
 from app.core.config import Settings
 from app.core.middlewares.auth_middleware import authenticate_and_authorize
 from app.core.exceptions.handler import AppException
-from app.core.exceptions.error_catalog import USER_NOT_FOUND
+from app.core.exceptions.error_catalog import USER_NOT_FOUND, UNAUTHORIZED
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -64,7 +64,6 @@ def verify_otp(
 def signin_user(
     data: SignInUser,
     request: Request,
-    response: Response,
     service: AuthService = Depends(get_auth_service),
 ):
     ip_address = request.client.host
@@ -107,3 +106,29 @@ def me(
     if not user_id:
         raise AppException(USER_NOT_FOUND)
     return service.get_user(user_id=user_id)
+
+
+@router.post("/refresh", response_model=None)
+def refresh(request: Request, service: AuthService = Depends(get_auth_service)):
+    refresh_token = request.cookies.get("refresh_token")
+    if not refresh_token:
+        raise AppException(UNAUTHORIZED)
+    token_data = service.rotate_refresh_token(refresh_token=refresh_token)
+    cookies = [
+        {
+            "key": "access_token",
+            "value": token_data["access_token"],
+            "httponly": True,
+            "secure": settings.is_production,
+            "samesite": "lax",
+        },
+        {
+            "key": "refresh_token",
+            "value": token_data["refresh_token"],
+            "httponly": True,
+            "secure": settings.is_production,
+            "samesite": "lax",
+        },
+    ]
+
+    return success_response(data=None, cookies=cookies)

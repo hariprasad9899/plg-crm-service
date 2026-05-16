@@ -1,6 +1,7 @@
 from pwdlib import PasswordHash
 import jwt
 from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
+import hashlib
 from app.core.config import Settings
 from app.core.exceptions.handler import AppException
 from app.core.exceptions.error_catalog import (
@@ -50,3 +51,7 @@ def verify_token(token: str):
         raise AppException(SESSION_EXPIRED)
     except InvalidTokenError:
         raise AppException(INVALID_SESSION)
+
+
+def hash_refresh_token(token: str) -> str:
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
