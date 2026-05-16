@@ -1,7 +1,6 @@
 from pwdlib import PasswordHash
 import jwt
 from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
-import time
 from app.core.config import Settings
 from app.core.exceptions.handler import AppException
 from app.core.exceptions.error_catalog import (
@@ -10,6 +9,7 @@ from app.core.exceptions.error_catalog import (
     SESSION_EXPIRED,
 )
 import secrets
+from datetime import datetime, UTC, timedelta
 
 settings = Settings()
 
@@ -24,18 +24,13 @@ def verify_hash(plain_value: str, hash_value: str) -> bool:
     return password_hash.verify(plain_value, hash_value)
 
 
-def get_iat():
-    return int(time.time())
-
-
 def create_jwt(user_id: str, tenant_id: str, session_id: str):
-    iat_time = get_iat()
     payload = {
         "user_id": str(user_id),
         "tenant_id": str(tenant_id),
         "session_id": str(session_id),
-        "exp": iat_time + 15 * 60,
-        "iat": iat_time,
+        "exp": datetime.now(UTC) + timedelta(minutes=15),
+        "iat": datetime.now(UTC),
         "type": "access",
     }
     return jwt.encode(payload, settings.jwt_secret_key, algorithm="HS256")

@@ -1,5 +1,4 @@
 from sqlalchemy.orm import Session as SQLAlchemySession
-from app.domain.ports.auth_ports import AuthPort
 from app.infrastructure.database.models.auth_models import (
     User,
     UserStatusEnum,
@@ -84,4 +83,10 @@ class AuthRepo:
             expires_at=expires_at,
             refresh_token_hash=refresh_token_hash,
         )
+        self.db.add(session)
+        self.db.flush()
+        return session
+
+    def get_session_by_id(self, session_id: str):
+        session = self.db.query(Session).filter(Session.id == session_id).first()
         return session

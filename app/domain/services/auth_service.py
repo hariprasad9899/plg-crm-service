@@ -6,6 +6,7 @@ from app.core.exceptions.error_catalog import (
     USER_NOT_FOUND,
     INVALID_CREDENTIALS,
     USER_DISABLED,
+    SESSION_NOT_FOUND,
 )
 from app.core.security.security import (
     hash_value,
@@ -156,7 +157,7 @@ class AuthService(AuthPort):
             refresh_token_hash = hash_value(refresh_token)
             session = self.auth_repo.create_session(
                 user_id=user.id,
-                tenant_id="",
+                tenant_id=None,
                 ip_address=ip_address,
                 user_agent=user_agent,
                 expires_at=expires_at,
@@ -188,8 +189,8 @@ class AuthService(AuthPort):
             raise
 
     def get_user(self, user_id: str):
-        user = self.auth_repo.get_user_by_user_id(user_id=user_id)
         try:
+            user = self.auth_repo.get_user_by_user_id(user_id=user_id)
             if not user:
                 raise AppException(USER_NOT_FOUND)
             res_data = {
@@ -201,3 +202,9 @@ class AuthService(AuthPort):
             return success_response(res_data)
         except Exception:
             raise
+
+    def get_session(self, session_id: str):
+        session = self.auth_repo.get_session_by_id(session_id=session_id)
+        if not session:
+            raise AppException(SESSION_NOT_FOUND)
+        return session
