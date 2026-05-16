@@ -26,11 +26,20 @@ class ResendOtp(BaseModel):
     purpose: OTPPurposeEnum
 
 
-class VerifyOtpResponse(BaseModel):
-    message: str
-
-
 class VerifyOtp(BaseModel):
     auth_id: str
     purpose: OTPPurposeEnum
     otp: int
+
+
+class SignInUserResponse(BaseModel):
+    id: str
+    auth_id: str
+    name: str
+    email: EmailStr
+    is_email_verified: str
+
+
+class SignInUser(BaseModel):
+    email: str
+    password: str

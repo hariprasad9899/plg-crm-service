@@ -1,18 +1,20 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session as SQLAlchemySession
 from app.domain.ports.auth_ports import AuthPort
 from app.infrastructure.database.models.auth_models import (
     User,
     UserStatusEnum,
     AuthIdentity,
     AuthProviderEnum,
+    Session,
 )
+from pydantic import EmailStr
 
 
 class AuthRepo:
-    def __init__(self, db: Session):
+    def __init__(self, db: SQLAlchemySession):
         self.db = db
 
-    def create_user(self, full_name: str, email: str, password: str):
+    def create_user(self, full_name: str, email: EmailStr, password: str):
         user = User(
             full_name=full_name,
             primary_email=email,
@@ -30,7 +32,7 @@ class AuthRepo:
         self,
         user_id: str,
         provider: AuthProviderEnum,
-        provider_email: str,
+        provider_email: EmailStr,
         password_hash: str,
         provider_user_id: str = "",
     ):
@@ -56,3 +58,30 @@ class AuthRepo:
     def get_user_by_user_id(self, user_id: str):
         user = self.db.query(User).filter(User.id == user_id).first()
         return user
+
+    def get_auth_by_provider_email(self, email: EmailStr):
+        auth_identity = (
+            self.db.query(AuthIdentity)
+            .filter(AuthIdentity.provider_email == email)
+            .first()
+        )
+        return auth_identity
+
+    def create_session(
+        self,
+        user_id: str,
+        tenant_id: str,
+        ip_address: str,
+        user_agent: str,
+        expires_at: str,
+        refresh_token_hash: str,
+    ):
+        session = Session(
+            user_id=user_id,
+            tenant_id=tenant_id,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            expires_at=expires_at,
+            refresh_token_hash=refresh_token_hash,
+        )
+        return session

@@ -149,9 +149,6 @@ class User(Base):
         cascade="all, delete-orphan",
         foreign_keys="TenantMembership.user_id",
     )
-    refresh_tokens = relationship(
-        "RefreshToken", back_populates="user", cascade="all, delete-orphan"
-    )
     sessions = relationship(
         "Session", back_populates="user", cascade="all, delete-orphan"
     )
@@ -219,26 +216,26 @@ class AuthIdentity(Base):
     )
 
 
-class RefreshToken(Base):
+# class RefreshToken(Base):
 
-    __tablename__ = "refresh_tokens"
+#     __tablename__ = "refresh_tokens"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
-    )
-    user_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
-    )
-    token_hash: Mapped[str] = mapped_column(Text, nullable=False)
-    expires_at: Mapped[DateTime] = mapped_column(
-        DateTime(timezone=True), nullable=False
-    )
-    revoked_at: Mapped[DateTime | None] = mapped_column(DateTime(timezone=True))
-    created_at: Mapped[DateTime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now()
-    )
-    user = relationship("User", back_populates="refresh_tokens")
-    __table_args__ = (Index("idx_refresh_user", "user_id"),)
+#     id: Mapped[uuid.UUID] = mapped_column(
+#         UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
+#     )
+#     user_id: Mapped[uuid.UUID] = mapped_column(
+#         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+#     )
+#     token_hash: Mapped[str] = mapped_column(Text, nullable=False)
+#     expires_at: Mapped[DateTime] = mapped_column(
+#         DateTime(timezone=True), nullable=False
+#     )
+#     revoked_at: Mapped[DateTime | None] = mapped_column(DateTime(timezone=True))
+#     created_at: Mapped[DateTime] = mapped_column(
+#         DateTime(timezone=True), nullable=False, server_default=func.now()
+#     )
+#     user = relationship("User", back_populates="refresh_tokens")
+#     __table_args__ = (Index("idx_refresh_user", "user_id"),)
 
 
 class TenantMembership(Base):
@@ -319,7 +316,6 @@ class Session(Base):
     refresh_token_hash: Mapped[str] = mapped_column(Text, nullable=False)
     ip_address: Mapped[str | None] = mapped_column(INET)
     user_agent: Mapped[str | None] = mapped_column(Text)
-    device_name: Mapped[str | None] = mapped_column(Text)
     expires_at: Mapped[DateTime] = mapped_column(
         DateTime(timezone=True), nullable=False
     )

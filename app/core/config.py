@@ -9,10 +9,15 @@ class Settings(BaseSettings):
     jwt_secret_key: str
     aws_access_key_id: str
     aws_secret_access_key: str
+    environment: str
 
     @property
     def get_token_url(self) -> str:
         return f"{self.google_oauth_url}/token"
+
+    @property
+    def is_production(self) -> bool:
+        return self.environment == "production"
 
     class Config:
         env_file = ".env"

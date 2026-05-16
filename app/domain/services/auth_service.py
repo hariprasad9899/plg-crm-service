@@ -1,12 +1,24 @@
 from app.core.response import success_response
 from app.infrastructure.database.repositories.auth_repository import AuthRepo
 from app.core.exceptions.base import AppException
-from app.core.exceptions.error_catalog import EMAIL_ALREADY_EXISTS, USER_NOT_FOUND
-from app.core.security.security import hash_value
+from app.core.exceptions.error_catalog import (
+    EMAIL_ALREADY_EXISTS,
+    USER_NOT_FOUND,
+    INVALID_CREDENTIALS,
+    USER_DISABLED,
+)
+from app.core.security.security import (
+    hash_value,
+    verify_hash,
+    create_jwt,
+    generator_random_token,
+    verify_token,
+)
 from app.domain.services.otp_service import OtpService
 from app.infrastructure.integrations.email.ses_email_service import SeSEmailService
 from app.infrastructure.database.models.otp_models import OTPPurposeEnum
 from app.domain.ports.auth_ports import AuthPort
+from datetime import datetime, UTC, timedelta
 
 
 class AuthService(AuthPort):
@@ -29,16 +41,12 @@ class AuthService(AuthPort):
     ):
         user = self.auth_repo.get_user_by_email(email=email)
         if user:
-            if user.is_email_verified:
-                raise AppException(EMAIL_ALREADY_EXISTS)
-            else:
-                # TODO
-                pass
+            raise AppException(EMAIL_ALREADY_EXISTS)
         try:
+            password_hash = hash_value(value=password)
             user = self.auth_repo.create_user(
                 full_name=full_name, email=email, password=password
             )
-            password_hash = hash_value(value=password)
             auth_identity = self.auth_repo.create_auth_identity(
                 user_id=user.id,
                 provider="password",
@@ -115,7 +123,7 @@ class AuthService(AuthPort):
             auth_user.user.is_email_verified = True
 
             self.auth_repo.db.commit()
-            self.auth_repo.db.refresh(auth_user)
+            self.auth_repo.db.refresh(auth_user.user)
 
             res_data = {
                 "message": "OTP verified successfully",
@@ -123,4 +131,58 @@ class AuthService(AuthPort):
 
             return success_response(res_data)
         except Exception:
+            raise
+
+    def login_user(self, email: str, password: str, ip_address: str, user_agent: str):
+        try:
+            auth_identity = self.auth_repo.get_auth_by_provider_email(email=email)
+            if not auth_identity:
+                raise AppException(INVALID_CREDENTIALS)
+
+            is_valid = verify_hash(
+                plain_value=password, hash_value=auth_identity.password_hash
+            )
+
+            if not is_valid:
+                raise AppException(INVALID_CREDENTIALS)
+
+            user = auth_identity.user
+            if not user.is_active:
+                raise AppException(USER_DISABLED)
+
+            expires_at = datetime.now(UTC) + timedelta(days=2)
+
+            refresh_token = generator_random_token()
+            refresh_token_hash = hash_value(refresh_token)
+            session = self.auth_repo.create_session(
+                user_id=user.id,
+                tenant_id="",
+                ip_address=ip_address,
+                user_agent=user_agent,
+                expires_at=expires_at,
+                refresh_token_hash=refresh_token_hash,
+            )
+
+            access_token = create_jwt(
+                user_id=user.id, tenant_id="", session_id=session.id
+            )
+
+            self.auth_repo.db.commit()
+
+            user_data = {
+                "id": str(user.id),
+                "auth_id": str(auth_identity.id),
+                "name": user.full_name,
+                "email": user.primary_email,
+                "is_email_verified": user.is_email_verified,
+            }
+
+            return {
+                "access_token": access_token,
+                "refresh_token": refresh_token,
+                "user_data": user_data,
+            }
+
+        except Exception:
+            self.auth_repo.db.rollback()
             raise
