@@ -11,6 +11,7 @@ from app.core.exceptions.error_catalog import (
 )
 import secrets
 from datetime import datetime, UTC, timedelta
+from app.core.constants import TokenConstants
 
 settings = Settings()
 
@@ -30,7 +31,8 @@ def create_jwt(user_id: str, tenant_id: str, session_id: str):
         "user_id": str(user_id),
         "tenant_id": str(tenant_id),
         "session_id": str(session_id),
-        "exp": datetime.now(UTC) + timedelta(minutes=15),
+        "exp": datetime.now(UTC)
+        + timedelta(minutes=TokenConstants.REFRESH_TOKEN_EXP_PERIOD_DAYS),
         "iat": datetime.now(UTC),
         "type": "access",
     }

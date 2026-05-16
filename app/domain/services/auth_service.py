@@ -23,6 +23,7 @@ from app.infrastructure.integrations.email.ses_email_service import SeSEmailServ
 from app.infrastructure.database.models.otp_models import OTPPurposeEnum
 from app.domain.ports.auth_ports import AuthPort
 from datetime import datetime, UTC, timedelta
+from app.core.constants import TokenConstants
 
 
 class AuthService(AuthPort):
@@ -154,7 +155,9 @@ class AuthService(AuthPort):
             if not user.is_active:
                 raise AppException(USER_DISABLED)
 
-            expires_at = datetime.now(UTC) + timedelta(days=2)
+            expires_at = datetime.now(UTC) + timedelta(
+                days=TokenConstants.REFRESH_TOKEN_EXP_PERIOD_DAYS
+            )
 
             refresh_token = generator_random_token()
             refresh_token_hash = hash_refresh_token(refresh_token)
