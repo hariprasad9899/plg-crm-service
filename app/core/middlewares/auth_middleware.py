@@ -1,4 +1,4 @@
-from fastapi import Depends
+from fastapi import Depends, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from app.core.security.security import verify_token
 from app.core.exceptions.handler import AppException
@@ -9,7 +9,8 @@ from app.dependencies.auth_dependenies import get_auth_service
 bearer_scheme = HTTPBearer()
 
 
-def authenticate_and_authorize(
+def authenticate_user(
+    request: Request,
     credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
     service: AuthService = Depends(get_auth_service),
 ):
@@ -22,5 +23,7 @@ def authenticate_and_authorize(
 
     if session.revoked_at:
         raise AppException(SESSION_REVOKED)
-
+    request.state.session_id = payload["session_id"]
+    request.state.user_id = payload["user_id"]
+    request.state.tenant_id = payload["tenant_id"]
     return payload

@@ -12,11 +12,15 @@ from app.domain.services.auth_service import AuthService
 from app.dependencies.auth_dependenies import get_auth_service
 from app.core.response import success_response
 from app.core.config import Settings
-from app.core.middlewares.auth_middleware import authenticate_and_authorize
+from app.core.middlewares.auth_middleware import authenticate_user
 from app.core.exceptions.handler import AppException
-from app.core.exceptions.error_catalog import USER_NOT_FOUND, UNAUTHORIZED
+from app.core.exceptions.error_catalog import (
+    USER_NOT_FOUND,
+    UNAUTHORIZED,
+    SESSION_NOT_FOUND,
+)
 
-router = APIRouter(prefix="/auth", tags=["auth"])
+router = APIRouter(prefix="/auth", tags=["Auth"])
 
 settings = Settings()
 
@@ -97,12 +101,17 @@ def signin_user(
     return success_response(user_data, cookies=cookies)
 
 
-@router.get("/me", response_model=SignInUserResponse)
+@router.get(
+    "/me",
+    response_model=SignInUserResponse,
+    dependencies=[Depends(authenticate_user)],
+)
 def me(
-    payload: dict = Depends(authenticate_and_authorize),
+    request: Request,
     service: AuthService = Depends(get_auth_service),
 ):
-    user_id = payload["user_id"]
+    user_id = request.state.user_id
+
     if not user_id:
         raise AppException(USER_NOT_FOUND)
     return service.get_user(user_id=user_id)
@@ -130,5 +139,23 @@ def refresh(request: Request, service: AuthService = Depends(get_auth_service)):
             "samesite": "lax",
         },
     ]
-
     return success_response(data=None, cookies=cookies)
+
+
+@router.post(
+    "/logout",
+    response_model=None,
+    dependencies=[Depends(authenticate_user)],
+)
+def logout(
+    request: Request,
+    response: Response,
+    service: AuthService = Depends(get_auth_service),
+):
+    session_id = request.state.session_id
+    if not session_id:
+        raise AppException(SESSION_NOT_FOUND)
+    service.logout_user(session_id=session_id)
+    response.delete_cookie("access_token")
+    response.delete_cookie("refresh_token")
+    return success_response(None, cookies=[])

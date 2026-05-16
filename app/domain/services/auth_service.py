@@ -213,26 +213,43 @@ class AuthService(AuthPort):
         return session
 
     def rotate_refresh_token(self, refresh_token: str):
-        refresh_token_hash = hash_refresh_token(refresh_token)
-        session = self.auth_repo.get_session_by_refresh_token_hash(
-            refresh_token_hash=refresh_token_hash
-        )
-        if not session:
-            raise AppException(INVALID_TOKEN)
-        if session.revoked_at:
-            raise AppException(SESSION_REVOKED)
-        if session.expires_at < datetime.now(UTC):
-            raise AppException(SESSION_EXPIRED)
+        try:
+            refresh_token_hash = hash_refresh_token(refresh_token)
+            session = self.auth_repo.get_session_by_refresh_token_hash(
+                refresh_token_hash=refresh_token_hash
+            )
+            if not session:
+                raise AppException(INVALID_TOKEN)
+            if session.revoked_at:
+                raise AppException(SESSION_REVOKED)
+            if session.expires_at < datetime.now(UTC):
+                raise AppException(SESSION_EXPIRED)
 
-        user = session.user
+            user = session.user
 
-        new_access_token = create_jwt(
-            user_id=user.id, tenant_id=None, session_id=session.id
-        )
-        new_refresh_token = generator_random_token()
-        new_refresh_token_hash = hash_refresh_token(new_refresh_token)
+            new_access_token = create_jwt(
+                user_id=user.id, tenant_id=None, session_id=session.id
+            )
+            new_refresh_token = generator_random_token()
+            new_refresh_token_hash = hash_refresh_token(new_refresh_token)
 
-        session.refresh_token_hash = new_refresh_token_hash
-        self.auth_repo.db.commit()
+            session.refresh_token_hash = new_refresh_token_hash
+            self.auth_repo.db.commit()
 
-        return {"access_token": new_access_token, "refresh_token": new_refresh_token}
+            return {
+                "access_token": new_access_token,
+                "refresh_token": new_refresh_token,
+            }
+        except Exception:
+            self.auth_repo.db.rollback()
+            raise
+
+    def logout_user(self, session_id: str):
+        try:
+            session = self.auth_repo.get_session_by_id(session_id=session_id)
+            if session:
+                session.revoked_at = datetime.now(UTC)
+            self.auth_repo.db.commit()
+            return True
+        except Exception:
+            raise
