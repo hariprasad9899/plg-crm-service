@@ -8,9 +8,7 @@ from app.domain.services.otp_service import OtpService
 from app.infrastructure.integrations.google.google_oauth_service import (
     GoogleOAuthService,
 )
-from app.core.config import Settings
-
-settings = Settings()
+from app.core.config import settings
 
 
 def get_auth_service(db=Depends(get_db)):

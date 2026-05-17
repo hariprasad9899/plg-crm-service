@@ -11,6 +11,7 @@ from app.core.exceptions.error_catalog import (
     SESSION_REVOKED,
     SESSION_EXPIRED,
     GOOGLE_EMAIL_NOT_VERIFIED,
+    INVALID_GOOGLE_TOKEN,
 )
 from app.core.security.security import (
     hash_value,
@@ -272,6 +273,11 @@ class AuthService(AuthPort):
         try:
             # verifiy and get google data
             google_user = self.google_oauth_service.exchange_code(code=google_auth_code)
+
+            # Check if id_token exists in response
+            if "id_token" not in google_user:
+                raise AppException(INVALID_GOOGLE_TOKEN)
+
             google_data = self.google_oauth_service.verify_google_id_token(
                 google_user["id_token"]
             )

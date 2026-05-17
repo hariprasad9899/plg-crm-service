@@ -163,7 +163,7 @@ def logout(
 
 
 @router.post("/verify-google", response_model=None)
-def verify_google(
+async def verify_google(
     payload: VerifyGoogleUser,
     request: Request,
     service: AuthService = Depends(get_auth_service),
