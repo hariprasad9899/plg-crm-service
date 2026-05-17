@@ -50,3 +50,7 @@ class UserResonse(BaseModel):
     name: str
     email: EmailStr
     is_email_verfied: bool
+
+
+class VerifyGoogleUser(BaseModel):
+    google_auth_code: str

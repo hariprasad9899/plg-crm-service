@@ -10,6 +10,7 @@ from app.core.exceptions.error_catalog import (
     INVALID_TOKEN,
     SESSION_REVOKED,
     SESSION_EXPIRED,
+    GOOGLE_EMAIL_NOT_VERIFIED,
 )
 from app.core.security.security import (
     hash_value,
@@ -24,6 +25,9 @@ from app.infrastructure.database.models.otp_models import OTPPurposeEnum
 from app.domain.ports.auth_ports import AuthPort
 from datetime import datetime, UTC, timedelta
 from app.core.constants import TokenConstants
+from app.infrastructure.integrations.google.google_oauth_service import (
+    GoogleOAuthService,
+)
 
 
 class AuthService(AuthPort):
@@ -32,10 +36,12 @@ class AuthService(AuthPort):
         auth_repo: AuthRepo,
         otp_service: OtpService,
         ses_email_service: SeSEmailService,
+        google_oauth_service: GoogleOAuthService,
     ):
         self.auth_repo = auth_repo
         self.otp_service = otp_service
         self.email_service = ses_email_service
+        self.google_oauth_service = google_oauth_service
 
     def create_user(
         self,
@@ -50,7 +56,10 @@ class AuthService(AuthPort):
         try:
             password_hash = hash_value(value=password)
             user = self.auth_repo.create_user(
-                full_name=full_name, email=email, password=password
+                full_name=full_name,
+                email=email,
+                avatar_url=None,
+                is_email_verified=False,
             )
             auth_identity = self.auth_repo.create_auth_identity(
                 user_id=user.id,
@@ -255,4 +264,105 @@ class AuthService(AuthPort):
             self.auth_repo.db.commit()
             return True
         except Exception:
+            raise
+
+    def authenticate_google_user(
+        self, google_auth_code: str, ip_address: str, user_agent: str
+    ):
+        try:
+            # verifiy and get google data
+            google_user = self.google_oauth_service.exchange_code(code=google_auth_code)
+            google_data = self.google_oauth_service.verify_google_id_token(
+                google_user["id_token"]
+            )
+
+            # extract google info
+            google_sub = google_data["sub"]
+            email = google_data["email"]
+            name = google_data["name"]
+            avatar = google_data.get("picture")
+
+            if not google_data.get("email_verified"):
+                raise AppException(GOOGLE_EMAIL_NOT_VERIFIED)
+
+            # check google identity exist
+            auth_identity = self.auth_repo.get_auth_identity_by_provider(
+                provider_user_id=google_sub, provider="google"
+            )
+
+            # case1: existing google user
+            if auth_identity:
+                user = auth_identity.user
+            else:
+                # check user exist by email
+                user = self.auth_repo.get_user_by_email(email=email)
+
+                # case2: existing password user
+                if user:
+                    user.is_email_verified = True
+                    # link google account
+                    auth_identity = self.auth_repo.create_auth_identity(
+                        user_id=user.id,
+                        provider="google",
+                        provider_user_id=google_sub,
+                        provider_email=email,
+                        password_hash=None,
+                    )
+                # case3: new user
+                else:
+                    user = self.auth_repo.create_user(
+                        full_name=name,
+                        email=email,
+                        avatar_url=avatar,
+                        is_email_verified=True,
+                    )
+
+                    auth_identity = self.auth_repo.create_auth_identity(
+                        user_id=user.id,
+                        provider="google",
+                        provider_user_id=google_sub,
+                        provider_email=email,
+                        password_hash=None,
+                    )
+
+            user.last_login_at = datetime.now(UTC)
+
+            # create session
+            expires_at = datetime.now(UTC) + timedelta(
+                days=TokenConstants.REFRESH_TOKEN_EXP_PERIOD_DAYS
+            )
+            refresh_token = generator_random_token()
+            refresh_token_hash = hash_refresh_token(refresh_token)
+            session = self.auth_repo.create_session(
+                user_id=user.id,
+                tenant_id=None,
+                ip_address=ip_address,
+                user_agent=user_agent,
+                expires_at=expires_at,
+                refresh_token_hash=refresh_token_hash,
+            )
+
+            access_token = create_jwt(
+                user_id=user.id, tenant_id=None, session_id=session.id
+            )
+
+            self.auth_repo.db.commit()
+            self.auth_repo.db.refresh(user)
+
+            user_data = {
+                "id": str(user.id),
+                "auth_id": str(auth_identity.id),
+                "name": user.full_name,
+                "email": user.primary_email,
+                "is_email_verified": user.is_email_verified,
+            }
+
+            return {
+                "access_token": access_token,
+                "refresh_token": refresh_token,
+                "user_data": user_data,
+            }
+
+        except Exception:
+            self.auth_repo.db.rollback()
             raise

@@ -13,11 +13,15 @@ class AuthRepo:
     def __init__(self, db: SQLAlchemySession):
         self.db = db
 
-    def create_user(self, full_name: str, email: EmailStr, password: str):
+    def create_user(
+        self, full_name: str, email: EmailStr, avatar_url: str, is_email_verified: bool
+    ):
         user = User(
             full_name=full_name,
             primary_email=email,
             status=UserStatusEnum.ACTIVE,
+            avatar_url=avatar_url,
+            is_email_verified=is_email_verified,
         )
         self.db.add(user)
         self.db.flush()
@@ -98,3 +102,14 @@ class AuthRepo:
             .first()
         )
         return session
+
+    def get_auth_identity_by_provider(self, provider_user_id: str, provider: str):
+        auth_identity = (
+            self.db.query(AuthIdentity)
+            .filter(
+                AuthIdentity.provider_user_id == provider_user_id,
+                AuthIdentity.provider == provider,
+            )
+            .first()
+        )
+        return auth_identity

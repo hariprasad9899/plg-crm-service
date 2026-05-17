@@ -159,3 +159,13 @@ FORBIDDEN = ErrorDefinition(
     message="You do not have permission to perform this action.",
     status_code=403,
 )
+
+INVALID_GOOGLE_TOKEN = ErrorDefinition(
+    code="INVALID_GOOGLE_TOKEN", message="Invalid google token", status_code=400
+)
+
+GOOGLE_EMAIL_NOT_VERIFIED = ErrorDefinition(
+    code="GOOGLE_EMAIL_NOT_VERIFIED",
+    message="Google email not verified",
+    status_code=400,
+)
