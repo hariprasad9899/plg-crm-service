@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from app.api.v1.router import router as v1_router
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,9 +11,18 @@ from app.core.exceptions.handler import (
     integrity_exception_handler,
     generic_exeption_handler,
 )
+from app.infrastructure.database.session import engine
+from app.infrastructure.database.base import Base
 import app.infrastructure.database.models
 
-app = FastAPI(title="auth-service")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    Base.metadata.create_all(bind=engine)
+    yield
+
+
+app = FastAPI(title="auth-service", lifespan=lifespan)
 
 origins = [
     "http://localhost",
