@@ -171,9 +171,11 @@ class AuthService(AuthPort):
 
             refresh_token = generator_random_token()
             refresh_token_hash = hash_refresh_token(refresh_token)
+            # TODO: Replace hardcoded tenant_id with dynamic tenant selection once tenant management CRUD is implemented
+            default_tenant_id = "0190f3a1-7c2e-7b8a-9f10-1a2b3c4d5e6f"
             session = self.auth_repo.create_session(
                 user_id=user.id,
-                tenant_id=None,
+                tenant_id=default_tenant_id,
                 ip_address=ip_address,
                 user_agent=user_agent,
                 expires_at=expires_at,
@@ -181,7 +183,9 @@ class AuthService(AuthPort):
             )
 
             access_token = create_jwt(
-                user_id=user.id, tenant_id=None, session_id=session.id
+                user_id=user.id,
+                tenant_id=default_tenant_id,
+                session_id=session.id,
             )
 
             self.auth_repo.db.commit()
@@ -333,7 +337,8 @@ class AuthService(AuthPort):
 
             user.last_login_at = datetime.now(UTC)
 
-            # create session
+            # TODO: Replace hardcoded tenant_id with dynamic tenant selection once tenant management CRUD is implemented
+            default_tenant_id = "0190f3a1-7c2e-7b8a-9f10-1a2b3c4d5e6f"
             expires_at = datetime.now(UTC) + timedelta(
                 days=TokenConstants.REFRESH_TOKEN_EXP_PERIOD_DAYS
             )
@@ -341,7 +346,7 @@ class AuthService(AuthPort):
             refresh_token_hash = hash_refresh_token(refresh_token)
             session = self.auth_repo.create_session(
                 user_id=user.id,
-                tenant_id=None,
+                tenant_id=default_tenant_id,
                 ip_address=ip_address,
                 user_agent=user_agent,
                 expires_at=expires_at,
@@ -349,7 +354,7 @@ class AuthService(AuthPort):
             )
 
             access_token = create_jwt(
-                user_id=user.id, tenant_id=None, session_id=session.id
+                user_id=user.id, tenant_id=default_tenant_id, session_id=session.id
             )
 
             self.auth_repo.db.commit()
