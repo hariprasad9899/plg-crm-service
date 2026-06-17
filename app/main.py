@@ -15,7 +15,7 @@ from app.infrastructure.database.session import engine
 from app.infrastructure.database.base import Base
 import app.infrastructure.database.models
 
-# dummy commit
+# dummy commits
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
