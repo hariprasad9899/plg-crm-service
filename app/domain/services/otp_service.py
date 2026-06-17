@@ -63,7 +63,7 @@ class OtpService(OptPort):
                 active_otp.consumed_at = datetime.now(UTC)
                 self.repo.db.commit()
                 raise AppException(OTP_MAX_ATTEMPTS_EXCEEDED)
-            if verify_hash(inp_otp, active_otp.otp_hash):
+            if verify_hash(str(inp_otp), active_otp.otp_hash):
                 active_otp.consumed_at = datetime.now(UTC)
                 self.repo.db.commit()
                 return True

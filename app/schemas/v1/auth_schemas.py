@@ -22,5 +22,35 @@ class ResendOtpResponse(BaseModel):
 
 
 class ResendOtp(BaseModel):
-    auth_identity_id: str
+    auth_id: str
     purpose: OTPPurposeEnum
+
+
+class VerifyOtp(BaseModel):
+    auth_id: str
+    purpose: OTPPurposeEnum
+    otp: int
+
+
+class SignInUserResponse(BaseModel):
+    id: str
+    auth_id: str
+    name: str
+    email: EmailStr
+    is_email_verified: bool
+
+
+class SignInUser(BaseModel):
+    email: str
+    password: str
+
+
+class UserResonse(BaseModel):
+    id: str
+    name: str
+    email: EmailStr
+    is_email_verfied: bool
+
+
+class VerifyGoogleUser(BaseModel):
+    google_auth_code: str
