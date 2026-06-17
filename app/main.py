@@ -47,3 +47,5 @@ app.include_router(v1_router)
 @app.get("/")
 def root():
     return {"message": "Hello World"}
+
+
